@@ -1,46 +1,60 @@
 # Sparkify Data Warehouse ETL Pipeline
 
-This repository contains an ETL pipeline designed to load and transform raw data from Amazon S3 into a Redshift data warehouse for Sparkify, a digital music streaming service.
+## Description
+---
 
-## Project Purpose
+This repository contains an ETL pipeline to populate the `sparkifydb` database hosted on AWS Redshift.
 
-The goal of this project is to create a robust and scalable data warehouse solution that allows Sparkify to analyze user activity, the songs they listen to, and the artists involved. By transforming the raw log and song datasets into an analytical format, Sparkify can extract valuable insights such as:
+- The goal of this database is to help Sparkify analyze user behavior — such as the songs users listen to and the artists they prefer — using log and song data.
+- This centralized data source supports analytical use cases, such as identifying popular songs or peak hours of user activity.
 
-- Most popular songs
-- Peak user activity hours
-- Artist trends and user preferences
+## Why Redshift?
+---
 
-## Why Use Redshift?
+- Amazon Redshift is a fully managed, cloud-based, petabyte-scale data warehouse solution provided by AWS.  
+- It offers fast querying capabilities, seamless scalability, and integrates well with other AWS services.
+- Redshift is ideal for collecting and storing large volumes of data and running analytical queries via business intelligence tools.
 
-Amazon Redshift is a fast, fully managed, petabyte-scale data warehouse that integrates seamlessly with various AWS services. It is ideal for running complex queries and analytical workloads on large-scale datasets. With Redshift, Sparkify can:
+![Redshift](redshift.PNG)
 
-- Store and manage massive amounts of data
-- Perform efficient and fast SQL-based analytics
-- Scale seamlessly as the business grows
+## Database Design
+---
 
-## Data Warehouse Schema Design
+- A **Star Schema** is used to simplify queries and allow fast aggregations.
+- The `songplays` table is the **fact table**, while other tables serve as **dimension tables** (e.g., `users`, `songs`, `artists`, `time`).
 
-A **Star Schema** is used in this project to optimize query performance and support analytical operations.
+![Schema](schema.PNG)
 
-- **Fact Table**
-  - `songplays`: Stores log data for user activity related to song plays.
-  
-- **Dimension Tables**
-  - `users`: User details
-  - `songs`: Song information
-  - `artists`: Artist information
-  - `time`: Timestamps broken into different time units
+## Data Pipeline Design
+---
 
-## Data Pipeline Overview
+- The ETL pipeline is developed in Python, leveraging libraries such as `pandas` for data manipulation and `psycopg2` for connecting to Redshift.
+- The data sources include:
+  - **Song data** (information about songs and artists)
+  - **Log data** (user activity)
 
-The ETL process is implemented in Python and uses libraries like `pandas` and `psycopg2` to facilitate data processing and interaction with Redshift.
+### ETL Workflow:
+1. Load JSON song and log data from Amazon S3 into **staging tables**: `staging_songs_table` and `staging_events_table`.
+2. Perform ETL operations to transform and insert data into the final **fact** and **dimension** tables.
 
-1. **Data Sources**
-   - Song data and log data in JSON format, stored in Amazon S3.
-2. **Staging Phase**
-   - Load raw data into Redshift staging tables: `staging_songs` and `staging_events`.
-3. **ETL Phase**
-   - Transform data in staging tables and insert it into final star schema tables (`songplays`, `users`, `songs`, `artists`, `time`).
+![Architecture](architecture.PNG)
 
-### Architecture Overview
+## Project Files
+---
 
+- `create_tables.py` — Drops existing tables and recreates all necessary tables including staging and final tables.
+- `sql_queries.py` — Contains all the SQL queries for table creation and data transformation.
+- `etl.py` — Loads data into staging tables, then processes and loads it into the star schema tables.
+- `redshift_cluster_setup.py` — Creates the Redshift cluster and IAM roles required for S3 access.
+- `redshift_cluster_teardown.py` — Deletes the Redshift cluster and associated IAM roles.
+- `dwh.cfg` — Configuration file containing Redshift and AWS settings. Update this file with your specific AWS credentials and cluster details.
+
+## Running the ETL Pipeline
+---
+
+1. **Create Tables**
+   - Run `create_tables.py` to create the database schema.
+   - Existing tables will be dropped and recreated.
+
+   ```bash
+   python create_tables.py
